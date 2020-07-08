@@ -54,4 +54,4 @@ python gpa_sender.py --mode email --gpa GPA_EMAIL_FILE --username USERNAME --pas
 
 (1) `python gpa_sender.py -V` 或 `python gpa_sender.py --version` 输出版本号;
 
-(2) `python gpa_sender.py -h` 或 `python gpa_sender.py --help` 输出帮助信息.
+(2) `python gpa_sender.py -h` 或 `python gpa_sender.py --help` 输出帮助信息。
