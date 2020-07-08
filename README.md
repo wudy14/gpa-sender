@@ -1,5 +1,13 @@
 # GPA Sender
 
+## 安装
+
+测试环境Python版本：3.7.1
+
+```shell
+pip install -r requirements.txt
+```
+
 ## 文件列表
 
 ```
