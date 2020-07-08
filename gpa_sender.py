@@ -37,7 +37,7 @@ class GPACalculator:
             raise ValueError("Invalid grade file path " + grade_file)
         if not exists(gpa_email_template):
             raise ValueError("Invalid grade file path " + gpa_email_template)
-        self.grade = read_excel(grade_file, sheet_name='report', encoding='gb2312')
+        self.grade = read_excel(grade_file, sheet_name="report", encoding="gb2312")
         self.gpa_email_template = gpa_email_template
         self.gpa_email_chem = read_excel(gpa_email_template, sheet_name="化工")
         self.gpa_email_poly = read_excel(gpa_email_template, sheet_name="高分子")
@@ -151,9 +151,9 @@ class MailSender:
             raise ValueError("Invalid grade file path " + gpa_email_file)
         if not exists(mail_template):
             raise ValueError("Invalid grade file path " + mail_template)
-        self.polymer_data = read_excel(gpa_email_file, sheet_name='高分子')
-        self.chem_data = read_excel(gpa_email_file, sheet_name='化工')
-        with open(mail_template, encoding='utf-8') as f:
+        self.polymer_data = read_excel(gpa_email_file, sheet_name="高分子")
+        self.chem_data = read_excel(gpa_email_file, sheet_name="化工")
+        with open(mail_template, encoding="utf-8") as f:
             self.mail_template = f.read()
         self.username = username
         self.password = password
@@ -171,25 +171,25 @@ class MailSender:
             for index in stu_data.index:
                 print()
                 print("="*20)
-                name = stu_data.at[index, '姓名']
-                num = stu_data.at[index, '学号']
-                to_addr = stu_data.at[index, '邮箱']
-                class_num = stu_data.at[index, '班级人数']
-                grade_num = stu_data.at[index, '专业人数']
+                name = stu_data.at[index, "姓名"]
+                num = stu_data.at[index, "学号"]
+                to_addr = stu_data.at[index, "邮箱"]
+                class_num = stu_data.at[index, "班级人数"]
+                grade_num = stu_data.at[index, "专业人数"]
                 
-                gpa1_term = stu_data.at[index, '最近必限']
-                class1_term = stu_data.at[index, '最近必限班级排名']
-                grade1_term = stu_data.at[index, '最近必限专业排名']
-                gpa2_term = stu_data.at[index, '最近必限任']
-                class2_term = stu_data.at[index, '最近必限任班级排名']
-                grade2_term = stu_data.at[index, '最近必限任专业排名']
+                gpa1_term = stu_data.at[index, "最近必限"]
+                class1_term = stu_data.at[index, "最近必限班级排名"]
+                grade1_term = stu_data.at[index, "最近必限专业排名"]
+                gpa2_term = stu_data.at[index, "最近必限任"]
+                class2_term = stu_data.at[index, "最近必限任班级排名"]
+                grade2_term = stu_data.at[index, "最近必限任专业排名"]
 
-                gpa1_total = stu_data.at[index, '总体必限']
-                class1_total = stu_data.at[index, '总体必限班级排名']
-                grade1_total = stu_data.at[index, '总体必限专业排名']
-                gpa2_total = stu_data.at[index, '总体必限任']
-                class2_total = stu_data.at[index, '总体必限任班级排名']
-                grade2_total = stu_data.at[index, '总体必限任专业排名']
+                gpa1_total = stu_data.at[index, "总体必限"]
+                class1_total = stu_data.at[index, "总体必限班级排名"]
+                grade1_total = stu_data.at[index, "总体必限专业排名"]
+                gpa2_total = stu_data.at[index, "总体必限任"]
+                class2_total = stu_data.at[index, "总体必限任班级排名"]
+                grade2_total = stu_data.at[index, "总体必限任专业排名"]
                 
                 mail_content = self.mail_template % (
                     name, num, 
@@ -199,10 +199,10 @@ class MailSender:
                     gpa2_total, class2_total, class_num, grade2_total, grade_num
                 )
                 
-                msg = MIMEText(mail_content, 'html', 'utf-8')
-                msg['From'] = self.format_addr(from_addr)
-                msg['To'] = self.format_addr('%s <%s>' % (name, to_addr))
-                msg['Subject'] = Header("化8年级学分绩与排名情况参考", "utf-8").encode()
+                msg = MIMEText(mail_content, "html", "utf-8")
+                msg["From"] = self.format_addr(from_addr)
+                msg["To"] = self.format_addr("%s <%s>" % (name, to_addr))
+                msg["Subject"] = Header("化8年级学分绩与排名情况参考", "utf-8").encode()
                 server.sendmail(from_addr, [to_addr], msg.as_string())
                 print("="*20)
                 print()
@@ -211,7 +211,7 @@ class MailSender:
     
     def format_addr(self, address):
         name, addr = parseaddr(address)
-        return formataddr((Header(name, 'utf-8').encode(), addr))
+        return formataddr((Header(name, "utf-8").encode(), addr))
 
 if __name__ == "__main__":
     if not args.mode:
