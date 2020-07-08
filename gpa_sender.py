@@ -16,31 +16,31 @@ from email.mime.text import MIMEText
 from email.utils import parseaddr, formataddr
 from pandas import read_excel, merge, DataFrame, ExcelWriter
 
-__version__ = "1.0.0.20200706_alpha"
+__version__ = "1.0.1.20200708_alpha"
 
 arg_parser = ArgumentParser(description="GPA Calculator and Email Sender")
 arg_parser.add_argument("-V", "--version", action="version", version="gpa_sender "+__version__)
 arg_parser.add_argument("--mode", choices=["gpa", "email"], dest="mode", help="Use gpa calculator or email sender")
 # GPA Calculator
 arg_parser.add_argument("-f", "--file", dest="grade_file", help="Grade excel file")
-arg_parser.add_argument("-t", "--template", dest="gpa_template", default="gpa_email_template.xlsx", help="GPA and emails excel file template")
+arg_parser.add_argument("-t", "--template", dest="gpa_email_template", default="gpa_email_template.xlsx", help="GPA and emails excel file template")
 # Email Sender
-arg_parser.add_argument("-g", "--gpa", dest="gpa_file", help="GPA and emails excel file")
-arg_parser.add_argument("-m", "--mail", dest="mail_file", default="mail_content.html", help="Mail template file")
+arg_parser.add_argument("-g", "--gpa", dest="gpa_email_file", help="GPA and emails excel file")
+arg_parser.add_argument("-m", "--mail", dest="mail_template", default="mail_template.html", help="Mail template file")
 arg_parser.add_argument("-u", "--username", dest="username", help="Tsinghua email username")
 arg_parser.add_argument("-p", "--password", action="store_true", dest="password", help="Tsinghua email password")
 args = arg_parser.parse_args()
 
 class GPACalculator:
-    def __init__(self, grade_file, gpa_template):
+    def __init__(self, grade_file, gpa_email_template):
         if not exists(grade_file):
             raise ValueError("Invalid grade file path " + grade_file)
-        if not exists(gpa_template):
-            raise ValueError("Invalid grade file path " + gpa_template)
+        if not exists(gpa_email_template):
+            raise ValueError("Invalid grade file path " + gpa_email_template)
         self.grade = read_excel(grade_file, sheet_name='report', encoding='gb2312')
-        self.gpa_template = gpa_template
-        self.gpa_email_chem = read_excel(gpa_template, sheet_name="化工")
-        self.gpa_email_poly = read_excel(gpa_template, sheet_name="高分子")
+        self.gpa_email_template = gpa_email_template
+        self.gpa_email_chem = read_excel(gpa_email_template, sheet_name="化工")
+        self.gpa_email_poly = read_excel(gpa_email_template, sheet_name="高分子")
         self.gpa_email_chem.loc[:, "学号"] = self.gpa_email_chem.loc[:, "学号"].astype(str)
         self.gpa_email_poly.loc[:, "学号"] = self.gpa_email_poly.loc[:, "学号"].astype(str)
         self.grade.loc[:, "学号"] = self.grade.loc[:, "学号"].astype(str)
@@ -78,8 +78,11 @@ class GPACalculator:
         for frame in [self.gpa_email_chem, self.gpa_email_poly]:
             for idx, row in frame.iterrows():
                 for type_name, course_type in self.course_types.items():
-                    frame.loc[idx, "最近"+type_name] = self.gpa.loc[self.gpa["学号"]==row["学号"], self.terms[-1]+"-"+type_name].values[0]
-                    frame.loc[idx, "总体"+type_name] = self.gpa.loc[self.gpa["学号"]==row["学号"], "总体-"+type_name].values[0]
+                    try:
+                        frame.loc[idx, "最近"+type_name] = self.gpa.loc[self.gpa["学号"]==row["学号"], self.terms[-1]+"-"+type_name].values[0]
+                        frame.loc[idx, "总体"+type_name] = self.gpa.loc[self.gpa["学号"]==row["学号"], "总体-"+type_name].values[0]
+                    except(IndexError):
+                        raise IndexError("Student {} in \"gpa_email_template.xlsx\" does not exist in \"gpa.xlsx\"".format(row["学号"]))
         
         # 高分子
         grade_num = self.gpa_email_poly.loc[:, "学号"].unique().size
@@ -119,10 +122,12 @@ class GPACalculator:
         sort_frame.sort_values("gpa", ascending=False, inplace=True)
         sort_frame.loc[:, "sorted"] = list(range(1, grade_series.size+1))
         for i, idx in enumerate(sort_frame.index):
-            if i > 0:
+            if i == 0:
+                last_idx = idx
+            else:
                 if sort_frame.loc[idx, "gpa"] == sort_frame.loc[last_idx, "gpa"]:
                     sort_frame.loc[idx, "sorted"] = sort_frame.loc[last_idx, "sorted"]
-            last_idx = idx
+                last_idx = idx
             
         sort_frame.sort_index(inplace=True)
         return sort_frame.loc[:, "sorted"].copy()
@@ -141,14 +146,14 @@ class GPACalculator:
         print("Done!")
 
 class MailSender:
-    def __init__(self, gpa_file, mail_file, username, password):
-        if not exists(gpa_file):
-            raise ValueError("Invalid grade file path " + gpa_file)
-        if not exists(mail_file):
-            raise ValueError("Invalid grade file path " + mail_file)
-        self.polymer_data = read_excel(gpa_file, sheet_name='高分子')
-        self.chem_data = read_excel(gpa_file, sheet_name='化工')
-        with open(mail_file, encoding='utf-8') as f:
+    def __init__(self, gpa_email_file, mail_template, username, password):
+        if not exists(gpa_email_file):
+            raise ValueError("Invalid grade file path " + gpa_email_file)
+        if not exists(mail_template):
+            raise ValueError("Invalid grade file path " + mail_template)
+        self.polymer_data = read_excel(gpa_email_file, sheet_name='高分子')
+        self.chem_data = read_excel(gpa_email_file, sheet_name='化工')
+        with open(mail_template, encoding='utf-8') as f:
             self.mail_template = f.read()
         self.username = username
         self.password = password
@@ -214,13 +219,13 @@ if __name__ == "__main__":
     if args.mode == "gpa":
         if not args.grade_file:
             raise ValueError("No grade file chosen!")
-        c = GPACalculator(args.grade_file, args.gpa_template)
+        c = GPACalculator(args.grade_file, args.gpa_email_template)
         c.calculate()
         c.output_generate()
         c.sort()
         c.gpa_email_update()
     elif args.mode == "email":
-        if not args.gpa_file:
+        if not args.gpa_email_file:
             raise ValueError("No gpa file chosen!")
         if not args.username:
             raise ValueError("No username given!")
@@ -228,5 +233,5 @@ if __name__ == "__main__":
             password = getpass("password:")
         else:
             raise ValueError("No password given!")
-        s = MailSender(args.gpa_file, args.mail_file, args.username, password)
+        s = MailSender(args.gpa_email_file, args.mail_template, args.username, password)
         s.mail_send()
